@@ -1,7 +1,9 @@
+import pandas as pd
 import sys
-sys.path.insert(0,"../util/")
+sys.path.insert(0,"/Workspace/util/")
 from envia_email import envia_email
 from registra_log import registra_log
+from conexao_db import conexao_db
 
 #####################################################################################################################
 # Número da Regra: 1
@@ -207,6 +209,8 @@ def importa_projeto(arquivo, aba, nomEtapa, indice=1):
             },
             header=0,
         )
+
+        print(df)
 
         cnxn = conexao_db()
         cur = cnxn.cursor()
