@@ -23,6 +23,7 @@ import os
 
 sys.path.insert(0,"/Workspace/util/")
 from conexao_db import conexao_db
+from registra_log import registra_log
 import pyodbc as pc
 
 # COMMAND ----------
