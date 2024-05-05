@@ -12,13 +12,22 @@
 
 # COMMAND ----------
 
+# DBTITLE 1,03_util_envia_email
 import sys
-sys.path.insert(0,"../util/")
-from envia_email import envia_email
-from registra_log import registra_log
+import pandas as pd
+import json
+import warnings
+import pyodbc as pc
+import numpy as np
+import os
+
+sys.path.insert(0,"/Workspace/util/")
+from conexao_db import conexao_db
+import pyodbc as pc
 
 # COMMAND ----------
 
+# DBTITLE 1,consulta_projeto
 #####################################################################################################################
 # Número da Regra: 1
 # Breve Descrição: Etapa destinada para criação de função Python responsável pelo registro dos logs de processamento
@@ -54,7 +63,7 @@ def consulta_projeto(nomArquivo, nomeProjeto, nomEtapa,indice):
         registra_log(
             nomArquivo,
             nomeProjeto,
-            nomeProjeto,
+            '',
             nomEtapa,
             "S",
             f"{indice} - CONSULTA DE PROJETO REALIZADO COM SUCESSO."
@@ -65,7 +74,7 @@ def consulta_projeto(nomArquivo, nomeProjeto, nomEtapa,indice):
         registra_log(
             nomArquivo,
             nomeProjeto,
-            nomeProjeto,
+            '',
             nomEtapa,
             "E",
             f"{indice} - ERROR: INTEGRITY CONSTRAINT VIOLATION OCCURRED: " + str(e)
@@ -76,7 +85,7 @@ def consulta_projeto(nomArquivo, nomeProjeto, nomEtapa,indice):
         registra_log(
             nomArquivo,
             nomeProjeto,
-            nomeProjeto,
+            '',
             nomEtapa,
             "E",
             f"{indice} - ERROR: FAILED TO INSERT DATA INTO THE DATABASE: " + str(e)
@@ -87,7 +96,7 @@ def consulta_projeto(nomArquivo, nomeProjeto, nomEtapa,indice):
             registra_log(
                 nomArquivo,
                 nomeProjeto,
-                nomeProjeto,
+                '',
                 nomEtapa,
                 "E",
                 f"{indice} - OCORREU UM ERRO AO CONSULTAR UM PROJETO. ERROR: " + str(e)
@@ -100,97 +109,7 @@ def consulta_projeto(nomArquivo, nomeProjeto, nomEtapa,indice):
 
 # COMMAND ----------
 
-#####################################################################################################################
-# Número da Regra: 1
-# Breve Descrição: 	Etapa destinada para criação de função Python responsável pela consulta da fonte de dado antes de cadastrar
-# Data Criação: 09/04/2024
-# Criado por: Gabriel Quintella
-#####################################################################################################################
-
-def consulta_fonte_dado(arquivo, idProjeto, nomeFonteDado, nomEtapa,indice):
-
-    try:
-
-        cnxn = conexao_db()
-        cur = cnxn.cursor()
-
-        queryIdFonteDados = f"""
-        SELECT CAST(ISNULL(SUM(tFDado.idFonteDados),-1) AS INT) idFonteDados , tPro.NomProjeto
-        FROM [dq].[TB_FONTE_DADO] tFDado
-        inner join [dq].[TB_PROJETO] tPro
-        on tFDado.IdProjeto = tPro.IdProjeto                            
-        where tFDado.[NomFonteDados] = '{nomeFonteDado}'
-        and tPro.[IdProjeto] = {idProjeto}
-        GROUP BY tPro.NomProjeto,tPro.NomProjeto;
-        """
-
-        dfNomFonteDados = pd.read_sql(queryIdFonteDados, cnxn)
-
-        idFonteDados = dfNomFonteDados["idFonteDados"].to_string(index=False)
-
-        nomeProjeto = dfNomFonteDados["NomProjeto"].to_string(index=False)
-
-        if dfNomFonteDados.empty:
-            
-            idFonteDados = -1
-
-        else:
-
-            idFonteDados = dfNomFonteDados["idFonteDados"].to_string(index=False)
-
-        registra_log(
-            arquivo,
-            nomeProjeto,
-            nomeFonteDado,
-            nomEtapa,
-            "S",
-            f"{indice} - VALIDAÇÃO DE FONTE DE DADO CADASTRADA"
-        )
-
-    except pc.IntegrityError as e:
-
-        registra_log(
-            arquivo,
-            nomeProjeto,
-            nomeFonteDado,
-            nomEtapa,
-            "E",
-            f"{indice} - ERROR: INTEGRITY CONSTRAINT VIOLATION OCCURRED: "+ str(e)
-        )
-
-    except pc.Error as e:
-
-        registra_log(
-            arquivo,
-            nomeProjeto,
-            nomeFonteDado,
-            nomEtapa,
-            "E",
-            f"{indice} - ERROR: FAILED TO INSERT DATA INTO THE DATABASE: "+ str(e)
-        )
-
-    except NameError as e:
-
-        registra_log(
-            arquivo,
-            nomeProjeto,
-            nomeFonteDado,
-            nomEtapa,
-            "E",
-            f"{indice} - ERROR: NAME IS NOT DEFINED: " + str(e)
-        )
-
-    finally:
-
-        cur.close()
-        cnxn.close()
-
-    indice += 1
-
-    return idFonteDados, indice
-
-# COMMAND ----------
-
+# DBTITLE 1,importa_projeto
 #####################################################################################################################
 # Número da Regra: 1
 # Breve Descrição: Etapa destinada para criação de função Python responsável pelo registro dos logs de processamento
@@ -278,7 +197,7 @@ def importa_projeto(arquivo, aba, nomEtapa, indice=1):
                     registra_log(
                         arquivo,
                         nomeProjeto,
-                        nomeProjeto,
+                        '',
                         nomEtapa,
                         "S",
                         f"{indice} - PROJETO CADASTRADO COM SUCESSO."
@@ -294,11 +213,11 @@ def importa_projeto(arquivo, aba, nomEtapa, indice=1):
 
         elif tpoAcao == 'ALTERAR':
 
-            print('exclusao')
+            atualiza_projeto(arquivo, aba, nomEtapa, indice)
 
         elif tpoAcao == 'EXCLUIR':
 
-            print('exclusao')
+            exclui_projeto(arquivo, aba, nomEtapa, indice)
 
         else:
            
@@ -341,6 +260,308 @@ def importa_projeto(arquivo, aba, nomEtapa, indice=1):
 
 # COMMAND ----------
 
+# DBTITLE 1,atualiza_projeto
+#####################################################################################################################
+# Número da Regra: 1
+# Breve Descrição: Etapa destinada para criação de função Python responsável pela atualização de dados de um projeto.
+# Data Criação: 09/04/2024
+# Criado por: Gabriel Quintella
+#####################################################################################################################
+
+def atualiza_projeto(arquivo, aba, nomEtapa, indice):
+
+    try:
+
+        df = pd.read_excel(
+            arquivo,
+            sheet_name=aba,
+            names=[
+                "DscUltimaAcao",
+                "IdProjeto",
+                "NomCategoriaProjeto",
+                "NomProjeto",
+                "NumMaxIteracoes",
+                "NomRespProjeto",
+                "NomRespTecnico",
+            ],
+            dtype={
+                "DscUltimaAcao": "str",
+                "IdProjeto": "str",
+                "NomCategoriaProjeto": "str",
+                "NomProjeto": "str",
+                "NumMaxIteracoes": "str",
+                "NomRespProjeto": "str",
+                "NomRespTecnico": "str",
+            },
+            header=0,
+            )       
+        
+        cnxn = conexao_db()
+        cur = cnxn.cursor()
+
+        nomeProjeto = df['NomProjeto'].to_string(index=False)
+        idProjeto = df['IdProjeto'].fillna('-1').to_string(index=False)
+        tpoAcao = df["DscUltimaAcao"].to_string(index=False)
+
+        if idProjeto == '-1':
+
+            registra_log(
+                arquivo,
+                nomeProjeto,
+                nomeProjeto,
+                f"ETAPA DE CONSULTA DE PROJETO ANTES DE ATUALIZAR.",
+                "S",
+                f"{indice} - NÃO EXISTE UM PROJETO CADASTRADO COM O CÓDIGO INFORMADO."
+            )
+
+        elif idProjeto != '-1':
+
+            for index, rowFonteDado in df.iterrows():
+
+                cur.execute("""UPDATE [dq].[TB_PROJETO]
+                                SET [DscUltimaAcao] = ?
+                                , [NomCategoriaProjeto] = ?
+                                , [NomProjeto] = ?
+                                , [NumMaxIteracoes] = ?
+                                , [NomRespProjeto] = ?
+                                , [NomRespTecnico] = ?
+                                , [DthAlteracao] = GETDATE()                               
+                                WHERE [IdProjeto] = ?;""",
+                                rowFonteDado.DscUltimaAcao,
+                                rowFonteDado.NomCategoriaProjeto,
+                                rowFonteDado.NomProjeto,
+                                rowFonteDado.NumMaxIteracoes,
+                                rowFonteDado.NomRespProjeto,
+                                rowFonteDado.NomRespTecnico,
+                                rowFonteDado.IdProjeto
+                            )                   
+                
+                
+                cnxn.commit()
+                cur.close()
+
+                registra_log(
+                    arquivo,
+                    nomeProjeto,
+                    '',
+                    nomEtapa,
+                    "S",
+                    f"{indice} - FONTE DE DADOS ATUALIZADA COM SUCESSO"
+                )            
+
+    except Exception as e:
+
+        registra_log(
+            arquivo,
+            nomeProjeto,
+            '',
+            nomEtapa,
+            "E",
+            f"{indice} - OCORREU UM ERRO DURANTE O PROCESSO DE ATUALIZAÇÃO DO PROJETO. ERROR: " + str(e)
+        )
+
+# COMMAND ----------
+
+# DBTITLE 1,exclui_projeto
+#####################################################################################################################
+# Número da Regra: 1
+# Breve Descrição: 	Etapa destinada para criação de função Python responsável pela exclusão de uma projeto e todas as fontes de dado associadas.
+# Data Criação: 09/04/2024
+# Criado por: Gabriel Quintella
+#####################################################################################################################
+
+def exclui_projeto(arquivo, aba, nomEtapa, indice):
+
+    try:
+
+        df = pd.read_excel(
+            arquivo,
+            sheet_name=aba,
+            names=[
+                "DscUltimaAcao",
+                "IdProjeto",
+                "NomCategoriaProjeto",
+                "NomProjeto",
+                "NumMaxIteracoes",
+                "NomRespProjeto",
+                "NomRespTecnico",
+            ],
+            dtype={
+                "DscUltimaAcao": "str",
+                "IdProjeto": "str",
+                "NomCategoriaProjeto": "str",
+                "NomProjeto": "str",
+                "NumMaxIteracoes": "str",
+                "NomRespProjeto": "str",
+                "NomRespTecnico": "str",
+            },
+            header=0,
+            )       
+        
+        cnxn = conexao_db()
+        cur = cnxn.cursor()
+
+        nomeProjeto = df['NomProjeto'].to_string(index=False)
+        idProjeto = df['IdProjeto'].fillna('-1').to_string(index=False)
+
+        if idProjeto == '-1':
+
+            registra_log(
+                arquivo,
+                nomeProjeto,
+                nomeProjeto,
+                f"ETAPA DE CONSULTA DE PROJETO ANTES DE EXCLUSÃO.",
+                "S",
+                f"{indice} - NÃO EXISTE UM PROJETO CADASTRADO COM O CÓDIGO INFORMADO."
+            )
+
+        elif idProjeto != '-1':
+
+            for index, rowFonteDado in df.iterrows():
+
+                try:
+
+                    cnxn.autocommit = False
+
+                    consulta_estrutura_fonte_dado = f'DELETE FROM [dq].[TB_ESTRUTURA_FONTE_DADO] WHERE [IdProjeto] = {idProjeto}'
+                    consulta_fonte_dado = f'DELETE FROM [dq].[TB_FONTE_DADO] WHERE [IdProjeto] = {idProjeto}'
+                    consulta_projeto = f'DELETE FROM [dq].[TB_PROJETO] WHERE [IdProjeto] = {idProjeto}'
+
+                    cur.execute(consulta_estrutura_fonte_dado)
+                    cur.execute(consulta_fonte_dado)
+                    cur.execute(consulta_projeto)
+                    
+                    cnxn.commit()
+
+                except Exception as e:
+
+                    cnxn.rollback()                    
+                    print(f"Erro: {str(e)}")                    
+                    print("Transação revertida.")
+
+            registra_log(
+                arquivo,
+                nomeProjeto,
+                '',
+                nomEtapa,
+                "S",
+                f"{indice} - PROJETO EXCLUIDO COM SUCESSO"
+            )
+
+    except Exception as e:
+
+        registra_log(
+            arquivo,
+            nomeProjeto,
+            '',
+            nomEtapa,
+            "E",
+            f"{indice} - OCORREU UM ERRO DURANTE O PROCESSO DE ATUALIZAÇÃO DO PROJETO. ERROR: " + str(e)
+        )
+
+# COMMAND ----------
+
+# DBTITLE 1,consulta_fonte_dado
+#####################################################################################################################
+# Número da Regra: 1
+# Breve Descrição: 	Etapa destinada para criação de função Python responsável pela consulta da fonte de dado antes de cadastrar
+# Data Criação: 09/04/2024
+# Criado por: Gabriel Quintella
+#####################################################################################################################
+
+def consulta_fonte_dado(arquivo, idProjeto, nomeFonteDado, nomEtapa,indice):
+
+    try:
+
+        cnxn = conexao_db()
+        cur = cnxn.cursor()
+
+        queryIdFonteDados = f"""
+        SELECT CAST(ISNULL(SUM(tFDado.idFonteDados),-1) AS INT) idFonteDados , tPro.NomProjeto
+        FROM [dq].[TB_FONTE_DADO] tFDado
+        inner join [dq].[TB_PROJETO] tPro
+        on tFDado.IdProjeto = tPro.IdProjeto                            
+        where tFDado.[NomFonteDados] = '{nomeFonteDado}'
+        and tPro.[IdProjeto] = {idProjeto}
+        GROUP BY tPro.NomProjeto,tPro.NomProjeto;
+        """
+
+        dfNomFonteDados = pd.read_sql(queryIdFonteDados, cnxn)
+        idFonteDados = dfNomFonteDados["idFonteDados"].to_string(index=False)
+
+        queryNomeProjeto = f"""
+        SELECT tPro.NomProjeto
+        FROM [dq].[TB_PROJETO] tPro
+        where 1=1
+        and tPro.[IdProjeto] = {idProjeto}
+        GROUP BY tPro.NomProjeto,tPro.NomProjeto;
+        """        
+
+        dfNomProjeto = pd.read_sql(queryNomeProjeto, cnxn)
+        nomeProjeto = dfNomProjeto["NomProjeto"].to_string(index=False)
+
+        if dfNomFonteDados.empty:
+            
+            idFonteDados = -1
+
+        else:
+
+            idFonteDados = dfNomFonteDados["idFonteDados"].to_string(index=False)
+
+        registra_log(
+            arquivo,
+            nomeProjeto,
+            nomeFonteDado,
+            nomEtapa,
+            "S",
+            f"{indice} - VALIDAÇÃO DE FONTE DE DADO CADASTRADA"
+        )
+
+    except pc.IntegrityError as e:
+
+        registra_log(
+            arquivo,
+            nomeProjeto,
+            nomeFonteDado,
+            nomEtapa,
+            "E",
+            f"{indice} - ERROR: INTEGRITY CONSTRAINT VIOLATION OCCURRED: "+ str(e)
+        )
+
+    except pc.Error as e:
+
+        registra_log(
+            arquivo,
+            nomeProjeto,
+            nomeFonteDado,
+            nomEtapa,
+            "E",
+            f"{indice} - ERROR: FAILED TO INSERT DATA INTO THE DATABASE: "+ str(e)
+        )
+
+    except NameError as e:
+
+        registra_log(
+            arquivo,
+            nomeProjeto,
+            nomeFonteDado,
+            nomEtapa,
+            "E",
+            f"{indice} - ERROR: NAME IS NOT DEFINED: " + str(e)
+        )
+
+    finally:
+
+        cur.close()
+        cnxn.close()
+
+    indice += 1
+
+    return idFonteDados, indice
+
+# COMMAND ----------
+
+# DBTITLE 1,importa_fonte_dado
 #####################################################################################################################
 # Número da Regra: 1
 # Breve Descrição: Etapa destinada para criação de função Python responsável pela importação da fonte de dado
@@ -542,6 +763,7 @@ def importa_fonte_dado(arquivo, nomeProjeto, aba, nomEtapa, indice):
 
 # COMMAND ----------
 
+# DBTITLE 1,atualiza_fonte_dado
 #####################################################################################################################
 # Número da Regra: 1
 # Breve Descrição: Etapa destinada para criação de função Python responsável pela atualização de uma fonte de dado cadastrada
@@ -645,6 +867,7 @@ def atualiza_fonte_dado(arquivo, nomeProjeto, aba, nomEtapa, indice):
 
 # COMMAND ----------
 
+# DBTITLE 1,exclui_fonte_dado
 #####################################################################################################################
 # Número da Regra: 1
 # Breve Descrição: 	Etapa destinada para criação de função Python responsável pela exclusão de uma fonte de dado cadastrada
@@ -737,6 +960,7 @@ def exclui_fonte_dado(arquivo, aba, nomEtapa, indice):
 
 # COMMAND ----------
 
+# DBTITLE 1,importa_estrutura_fonte_dado
 #####################################################################################################################
 # Número da Regra: 1
 # Breve Descrição: Etapa destinada para criação de função Python responsável pela importação da estrutura de uma fonte de dado
@@ -910,6 +1134,7 @@ def importa_estrutura_fonte_dado(arquivo, aba, idProjeto, idFonteDado, IdEstrutu
 
 # COMMAND ----------
 
+# DBTITLE 1,consulta_estrutura_fonte_dado
 #####################################################################################################################
 # Número da Regra: 1
 # Breve Descrição: 	Etapa destinada para criação de função Python responsável pela consulta da estrutura de uma fonte de dado antes de cadastrar
@@ -965,7 +1190,14 @@ def consulta_estrutura_fonte_dado(arquivo, abaEstruturaFonteDado, idProjeto, idF
 
             nomeProjeto = dfNomProjeto["NomProjeto"].to_string(index=False)
 
-            nomeFonteDados = dfFonteDados["NomFonteDados"].to_string(index=False)            
+
+            queryNomFonteDado = f"""SELECT DISTINCT C.[NomFonteDados]
+            FROM [dq].[TB_FONTE_DADO] C
+            WHERE C.[IdFonteDados] = {idFonteDado};"""
+
+            dfNomFonteDado = pd.read_sql(queryNomFonteDado, cnxn)
+
+            nomeFonteDados = dfNomFonteDado["NomFonteDados"].to_string(index=False)            
 
             if dfFonteDados.empty:
 
@@ -1049,6 +1281,7 @@ def consulta_estrutura_fonte_dado(arquivo, abaEstruturaFonteDado, idProjeto, idF
 
 # COMMAND ----------
 
+# DBTITLE 1,atualiza_estrutura_fonte_dado
 #####################################################################################################################
 # Número da Regra: 1
 # Breve Descrição: Etapa destinada para criação de função Python responsável pela atualização da estrutura de uma fonte de dado
@@ -1171,6 +1404,7 @@ def atualiza_estrutura_fonte_dado(arquivo, aba, nomEtapa, indice):
 
 # COMMAND ----------
 
+# DBTITLE 1,valida_arquivo
 #####################################################################################################################
 # Número da Regra: 1
 # Breve Descrição: Etapa destinada para criação de função Python responsável pela validação do arquivo de cadastro antes de iniciar o processo de importação.
@@ -1680,7 +1914,11 @@ def valida_arquivo(arquivo, abaProjeto, abaFonteDado, abaEstruturaFonteDado):
 
         if contador == 0:
 
-            msg += f'* {contador} - Não foi encontrada nenhuma inconsistência.'
+            msg += f'* {contador} - Não foi encontrada nenhuma inconsistência.\n \nAtenciosamente, \n\nData Quality Control'
+
+        else:
+
+            msg += f'\n \nAtenciosamente, \n\nData Quality Control'
 
         print(msg)
 
@@ -1699,6 +1937,7 @@ def valida_arquivo(arquivo, abaProjeto, abaFonteDado, abaEstruturaFonteDado):
 
 # COMMAND ----------
 
+# DBTITLE 1,importa_planilha_dq
 #####################################################################################################################
 # Número da Regra: 1
 # Breve Descrição: Etapa principal do processo de importação do arquivo de cadastro da fonte no Data Quality.
@@ -1715,6 +1954,9 @@ def importa_planilha_dq(arquivo, abaProjeto, abaFonteDado, abaEstruturaFonteDado
         contador, msg = valida_arquivo(arquivo, abaProjeto, abaFonteDado, abaEstruturaFonteDado)
 
         if contador == 0:
+
+            cnxn = conexao_db()
+            cur = cnxn.cursor()
 
             idProjeto, nomeProjeto, indice = importa_projeto(arquivo
                                                             , abaProjeto
@@ -1738,10 +1980,21 @@ def importa_planilha_dq(arquivo, abaProjeto, abaFonteDado, abaEstruturaFonteDado
                 indice
             )
 
+            queryNomFonteDado = f"""SELECT DISTINCT C.[NomFonteDados]
+            FROM [dq].[TB_FONTE_DADO] C
+            WHERE C.[IdFonteDados] = {idFonteDados};"""
+
+            dfNomFonteDado = pd.read_sql(queryNomFonteDado, cnxn)
+
+            nomeFonteDados = dfNomFonteDado["NomFonteDados"].to_string(index=False)   
+
+            cnxn.commit()
+            cur.close()             
+
             registra_log(
                 arquivo,
                 nomeProjeto,
-                nomeProjeto,
+                nomeFonteDados,
                 "FINALIZAÇÃO NO PROCESSO DE CADASTRO NO DATA QUALITY",
                 "E",
                 f"{indice} - PROCESSO EXECUTADO COM SUCESSO."

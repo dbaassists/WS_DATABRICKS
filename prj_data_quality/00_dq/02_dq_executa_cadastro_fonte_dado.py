@@ -1,12 +1,15 @@
 # Databricks notebook source
-# MAGIC %run "/exemplos/data_quality/00_dq_cadastro_fonte"
+# MAGIC %run "../00_dq/00_dq_cadastro_fonte"
+# MAGIC
 
 # COMMAND ----------
 
 import sys
-sys.path.insert(0,"../util/")
-from envia_email import envia_email
-from registra_log import registra_log
+sys.path.insert(0,"/Workspace/util/")
+from conexao_db import conexao_db
+sys.path.insert(0,"/00_dq/")
+from _dq_cadastro_fonte import *
+import pyodbc as pc
 
 # COMMAND ----------
 

@@ -1,9 +1,14 @@
 import sys
 import os
-sys.path.insert(0,"../util/")
+import pandas as pd
+import pyodbc as pc
+
 from envia_email import envia_email
 from registra_log import registra_log
-from dq_cadastro_fonte import dq_cadastro_fonte
+from dq_cadastro_fonte import importa_planilha_dq
+from conexao_db import conexao_db
+
+sys.path.insert(0, "/Workspace/util/")
 
 diretorio = '/dbfs/mnt/dados/data_quality/'
 abaProjeto = 'Projeto'
