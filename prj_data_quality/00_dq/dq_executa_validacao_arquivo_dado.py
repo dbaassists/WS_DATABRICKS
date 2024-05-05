@@ -1,8 +1,9 @@
 import sys
-sys.path.insert(0,"../util/")
-from envia_email import envia_email
-from registra_log import registra_log
-from dq_validacao_arquivo_dado import dq_validacao_arquivo_dado
+sys.path.insert(0,"/Workspace/util/")
+from conexao_db import conexao_db
+sys.path.insert(0,"/00_dq/")
+from _0_dq_cadastro_fonte import importa_planilha_dq
+import pyodbc as pc
 
 idprojeto = 1
 idfontedado = 1

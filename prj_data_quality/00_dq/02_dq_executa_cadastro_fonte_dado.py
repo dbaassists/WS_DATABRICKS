@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0,"/Workspace/util/")
 from conexao_db import conexao_db
 sys.path.insert(0,"/00_dq/")
-from _dq_cadastro_fonte import *
+from _dq_cadastro_fonte import importa_planilha_dq
 import pyodbc as pc
 
 # COMMAND ----------
@@ -25,3 +25,7 @@ for arquivo in os.listdir(diretorio):
     if  os.path.isfile(path):
 
         importa_planilha_dq(path,abaProjeto,abaFonteDado,abaEstruturaFonteDado)    
+
+# COMMAND ----------
+
+

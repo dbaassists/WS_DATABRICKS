@@ -40,7 +40,7 @@ def consulta_projeto(nomArquivo, nomeProjeto, nomEtapa,indice):
         registra_log(
             nomArquivo,
             nomeProjeto,
-            nomeProjeto,
+            '',
             nomEtapa,
             "S",
             f"{indice} - CONSULTA DE PROJETO REALIZADO COM SUCESSO."
@@ -51,7 +51,7 @@ def consulta_projeto(nomArquivo, nomeProjeto, nomEtapa,indice):
         registra_log(
             nomArquivo,
             nomeProjeto,
-            nomeProjeto,
+            '',
             nomEtapa,
             "E",
             f"{indice} - ERROR: INTEGRITY CONSTRAINT VIOLATION OCCURRED: " + str(e)
@@ -62,7 +62,7 @@ def consulta_projeto(nomArquivo, nomeProjeto, nomEtapa,indice):
         registra_log(
             nomArquivo,
             nomeProjeto,
-            nomeProjeto,
+            '',
             nomEtapa,
             "E",
             f"{indice} - ERROR: FAILED TO INSERT DATA INTO THE DATABASE: " + str(e)
@@ -73,7 +73,7 @@ def consulta_projeto(nomArquivo, nomeProjeto, nomEtapa,indice):
             registra_log(
                 nomArquivo,
                 nomeProjeto,
-                nomeProjeto,
+                '',
                 nomEtapa,
                 "E",
                 f"{indice} - OCORREU UM ERRO AO CONSULTAR UM PROJETO. ERROR: " + str(e)
@@ -83,7 +83,348 @@ def consulta_projeto(nomArquivo, nomeProjeto, nomEtapa,indice):
 
     return idProjeto, indice
 
+#####################################################################################################################
+# Número da Regra: 1
+# Breve Descrição: Etapa destinada para criação de função Python responsável pelo registro dos logs de processamento
+# Data Criação: 09/04/2024
+# Criado por: Gabriel Quintella
+#####################################################################################################################
 
+def importa_projeto(arquivo, aba, nomEtapa, indice=1):
+
+    try:
+
+        df = pd.read_excel(
+            arquivo,
+            sheet_name=aba,
+            names=[
+                "DscUltimaAcao",
+                "IdProjeto",
+                "NomCategoriaProjeto",
+                "NomProjeto",
+                "NumMaxIteracoes",
+                "NomRespProjeto",
+                "NomRespTecnico",
+            ],
+            dtype={
+                "DscUltimaAcao": "str",
+                "IdProjeto": "str",
+                "NomCategoriaProjeto": "str",
+                "NomProjeto": "str",
+                "NumMaxIteracoes": "str",
+                "NomRespProjeto": "str",
+                "NomRespTecnico": "str",
+            },
+            header=0,
+        )
+
+        cnxn = conexao_db()
+        cur = cnxn.cursor()
+
+        nomeProjeto = df["NomProjeto"].to_string(index=False)
+        tpoAcao = df["DscUltimaAcao"].to_string(index=False)
+
+        idProjeto, indice = consulta_projeto(
+                                    arquivo
+                                    , nomeProjeto
+                                    , "ETAPA DE CONSULTA DE PROJETO."
+                                    , indice
+                                    )
+
+        if tpoAcao == 'CADASTRAR':
+
+            if idProjeto != -1:
+
+                registra_log(
+                    arquivo,
+                    nomeProjeto,
+                    nomeProjeto,
+                    f"ETAPA DE CONSULTA DE PROJETO ANTES DE CADASTRAR.",
+                    "S",
+                    f"{indice} - CADASTRO NÃO REALIZADO POIS O PROJETO JÁ ESTÁ CADASTRADO."
+                )
+
+            elif idProjeto == -1:
+
+                for index, rowProjeto in df.iterrows():
+
+                    cur.execute(
+                        """INSERT INTO dq.TB_PROJETO
+                                (
+                                NomCategoriaProjeto
+                                ,NomProjeto
+                                ,NumMaxIteracoes
+                                ,NomRespProjeto
+                                ,NomRespTecnico
+                                ,DscUltimaAcao
+                                )
+                                values(?,?,?,?,?,?)""",
+                                rowProjeto.NomCategoriaProjeto,
+                                rowProjeto.NomProjeto,
+                                rowProjeto.NumMaxIteracoes,
+                                rowProjeto.NomRespProjeto,
+                                rowProjeto.NomRespTecnico,
+                                rowProjeto.DscUltimaAcao
+                    )
+
+                    registra_log(
+                        arquivo,
+                        nomeProjeto,
+                        '',
+                        nomEtapa,
+                        "S",
+                        f"{indice} - PROJETO CADASTRADO COM SUCESSO."
+                    )
+
+            cnxn.commit()
+            cur.close()
+
+            idProjeto , indice = consulta_projeto(arquivo
+                                         , nomeProjeto
+                                         , "RETORNO DO CÓDIGO DO PROJETO CADASTRADO"
+                                         , indice)
+
+        elif tpoAcao == 'ALTERAR':
+
+            atualiza_projeto(arquivo, aba, nomEtapa, indice)
+
+        elif tpoAcao == 'EXCLUIR':
+
+            exclui_projeto(arquivo, aba, nomEtapa, indice)
+
+        else:
+           
+            print('Erro de Preenchimento')
+
+    except pc.IntegrityError as e:
+
+        registra_log(
+            arquivo,
+            nomeProjeto,
+            nomeProjeto,
+            nomEtapa,
+            "E",
+            f"{indice} - ERROR: INTEGRITY CONSTRAINT VIOLATION OCCURRED:" + str(e)
+        )
+
+    except pc.Error as e:
+
+        registra_log(
+            arquivo,
+            nomeProjeto,
+            nomeProjeto,
+            nomEtapa,
+            "E",
+            f"{indice} - ERROR: FAILED TO INSERT DATA INTO THE DATABASE: " + str(e)
+        )
+
+    except Exception as e:
+        
+        registra_log(
+            arquivo,
+            nomeProjeto,
+            nomeProjeto,
+            nomEtapa,
+            "E",
+            f"{indice} - OCORREU UM ERRO DURANTE O PROCESSO DE IMPORTAÇÃO DE PROJETOS. ERROR: " + str(e)
+        )
+
+    return idProjeto, nomeProjeto, indice
+
+#####################################################################################################################
+# Número da Regra: 1
+# Breve Descrição: Etapa destinada para criação de função Python responsável pela atualização de dados de um projeto.
+# Data Criação: 09/04/2024
+# Criado por: Gabriel Quintella
+#####################################################################################################################
+
+def atualiza_projeto(arquivo, aba, nomEtapa, indice):
+
+    try:
+
+        df = pd.read_excel(
+            arquivo,
+            sheet_name=aba,
+            names=[
+                "DscUltimaAcao",
+                "IdProjeto",
+                "NomCategoriaProjeto",
+                "NomProjeto",
+                "NumMaxIteracoes",
+                "NomRespProjeto",
+                "NomRespTecnico",
+            ],
+            dtype={
+                "DscUltimaAcao": "str",
+                "IdProjeto": "str",
+                "NomCategoriaProjeto": "str",
+                "NomProjeto": "str",
+                "NumMaxIteracoes": "str",
+                "NomRespProjeto": "str",
+                "NomRespTecnico": "str",
+            },
+            header=0,
+            )       
+        
+        cnxn = conexao_db()
+        cur = cnxn.cursor()
+
+        nomeProjeto = df['NomProjeto'].to_string(index=False)
+        idProjeto = df['IdProjeto'].fillna('-1').to_string(index=False)
+        tpoAcao = df["DscUltimaAcao"].to_string(index=False)
+
+        if idProjeto == '-1':
+
+            registra_log(
+                arquivo,
+                nomeProjeto,
+                nomeProjeto,
+                f"ETAPA DE CONSULTA DE PROJETO ANTES DE ATUALIZAR.",
+                "S",
+                f"{indice} - NÃO EXISTE UM PROJETO CADASTRADO COM O CÓDIGO INFORMADO."
+            )
+
+        elif idProjeto != '-1':
+
+            for index, rowFonteDado in df.iterrows():
+
+                cur.execute("""UPDATE [dq].[TB_PROJETO]
+                                SET [DscUltimaAcao] = ?
+                                , [NomCategoriaProjeto] = ?
+                                , [NomProjeto] = ?
+                                , [NumMaxIteracoes] = ?
+                                , [NomRespProjeto] = ?
+                                , [NomRespTecnico] = ?
+                                , [DthAlteracao] = GETDATE()                               
+                                WHERE [IdProjeto] = ?;""",
+                                rowFonteDado.DscUltimaAcao,
+                                rowFonteDado.NomCategoriaProjeto,
+                                rowFonteDado.NomProjeto,
+                                rowFonteDado.NumMaxIteracoes,
+                                rowFonteDado.NomRespProjeto,
+                                rowFonteDado.NomRespTecnico,
+                                rowFonteDado.IdProjeto
+                            )                   
+                
+                
+                cnxn.commit()
+                cur.close()
+
+                registra_log(
+                    arquivo,
+                    nomeProjeto,
+                    '',
+                    nomEtapa,
+                    "S",
+                    f"{indice} - FONTE DE DADOS ATUALIZADA COM SUCESSO"
+                )            
+
+    except Exception as e:
+
+        registra_log(
+            arquivo,
+            nomeProjeto,
+            '',
+            nomEtapa,
+            "E",
+            f"{indice} - OCORREU UM ERRO DURANTE O PROCESSO DE ATUALIZAÇÃO DO PROJETO. ERROR: " + str(e)
+        )
+
+#####################################################################################################################
+# Número da Regra: 1
+# Breve Descrição: 	Etapa destinada para criação de função Python responsável pela exclusão de uma projeto e todas as fontes de dado associadas.
+# Data Criação: 09/04/2024
+# Criado por: Gabriel Quintella
+#####################################################################################################################
+
+def exclui_projeto(arquivo, aba, nomEtapa, indice):
+
+    try:
+
+        df = pd.read_excel(
+            arquivo,
+            sheet_name=aba,
+            names=[
+                "DscUltimaAcao",
+                "IdProjeto",
+                "NomCategoriaProjeto",
+                "NomProjeto",
+                "NumMaxIteracoes",
+                "NomRespProjeto",
+                "NomRespTecnico",
+            ],
+            dtype={
+                "DscUltimaAcao": "str",
+                "IdProjeto": "str",
+                "NomCategoriaProjeto": "str",
+                "NomProjeto": "str",
+                "NumMaxIteracoes": "str",
+                "NomRespProjeto": "str",
+                "NomRespTecnico": "str",
+            },
+            header=0,
+            )       
+        
+        cnxn = conexao_db()
+        cur = cnxn.cursor()
+
+        nomeProjeto = df['NomProjeto'].to_string(index=False)
+        idProjeto = df['IdProjeto'].fillna('-1').to_string(index=False)
+
+        if idProjeto == '-1':
+
+            registra_log(
+                arquivo,
+                nomeProjeto,
+                nomeProjeto,
+                f"ETAPA DE CONSULTA DE PROJETO ANTES DE EXCLUSÃO.",
+                "S",
+                f"{indice} - NÃO EXISTE UM PROJETO CADASTRADO COM O CÓDIGO INFORMADO."
+            )
+
+        elif idProjeto != '-1':
+
+            for index, rowFonteDado in df.iterrows():
+
+                try:
+
+                    cnxn.autocommit = False
+
+                    consulta_estrutura_fonte_dado = f'DELETE FROM [dq].[TB_ESTRUTURA_FONTE_DADO] WHERE [IdProjeto] = {idProjeto}'
+                    consulta_fonte_dado = f'DELETE FROM [dq].[TB_FONTE_DADO] WHERE [IdProjeto] = {idProjeto}'
+                    consulta_projeto = f'DELETE FROM [dq].[TB_PROJETO] WHERE [IdProjeto] = {idProjeto}'
+
+                    cur.execute(consulta_estrutura_fonte_dado)
+                    cur.execute(consulta_fonte_dado)
+                    cur.execute(consulta_projeto)
+                    
+                    cnxn.commit()
+
+                except Exception as e:
+
+                    cnxn.rollback()                    
+                    print(f"Erro: {str(e)}")                    
+                    print("Transação revertida.")
+
+            registra_log(
+                arquivo,
+                nomeProjeto,
+                '',
+                nomEtapa,
+                "S",
+                f"{indice} - PROJETO EXCLUIDO COM SUCESSO"
+            )
+
+    except Exception as e:
+
+        registra_log(
+            arquivo,
+            nomeProjeto,
+            '',
+            nomEtapa,
+            "E",
+            f"{indice} - OCORREU UM ERRO DURANTE O PROCESSO DE ATUALIZAÇÃO DO PROJETO. ERROR: " + str(e)
+        )
 
 #####################################################################################################################
 # Número da Regra: 1
@@ -110,10 +451,18 @@ def consulta_fonte_dado(arquivo, idProjeto, nomeFonteDado, nomEtapa,indice):
         """
 
         dfNomFonteDados = pd.read_sql(queryIdFonteDados, cnxn)
-
         idFonteDados = dfNomFonteDados["idFonteDados"].to_string(index=False)
 
-        nomeProjeto = dfNomFonteDados["NomProjeto"].to_string(index=False)
+        queryNomeProjeto = f"""
+        SELECT tPro.NomProjeto
+        FROM [dq].[TB_PROJETO] tPro
+        where 1=1
+        and tPro.[IdProjeto] = {idProjeto}
+        GROUP BY tPro.NomProjeto,tPro.NomProjeto;
+        """        
+
+        dfNomProjeto = pd.read_sql(queryNomeProjeto, cnxn)
+        nomeProjeto = dfNomProjeto["NomProjeto"].to_string(index=False)
 
         if dfNomFonteDados.empty:
             
@@ -173,158 +522,6 @@ def consulta_fonte_dado(arquivo, idProjeto, nomeFonteDado, nomEtapa,indice):
     indice += 1
 
     return idFonteDados, indice
-
-
-#####################################################################################################################
-# Número da Regra: 1
-# Breve Descrição: Etapa destinada para criação de função Python responsável pelo registro dos logs de processamento
-# Data Criação: 09/04/2024
-# Criado por: Gabriel Quintella
-#####################################################################################################################
-
-def importa_projeto(arquivo, aba, nomEtapa, indice=1):
-
-    try:
-
-        df = pd.read_excel(
-            arquivo,
-            sheet_name=aba,
-            names=[
-                "DscUltimaAcao",
-                "IdProjeto",
-                "NomCategoriaProjeto",
-                "NomProjeto",
-                "NumMaxIteracoes",
-                "NomRespProjeto",
-                "NomRespTecnico",
-            ],
-            dtype={
-                "DscUltimaAcao": "str",
-                "IdProjeto": "str",
-                "NomCategoriaProjeto": "str",
-                "NomProjeto": "str",
-                "NumMaxIteracoes": "str",
-                "NomRespProjeto": "str",
-                "NomRespTecnico": "str",
-            },
-            header=0,
-        )
-
-        print(df)
-
-        cnxn = conexao_db()
-        cur = cnxn.cursor()
-
-        nomeProjeto = df["NomProjeto"].to_string(index=False)
-        tpoAcao = df["DscUltimaAcao"].to_string(index=False)
-
-        idProjeto, indice = consulta_projeto(
-                                    arquivo
-                                    , nomeProjeto
-                                    , "ETAPA DE CONSULTA DE PROJETO."
-                                    , indice
-                                    )
-
-        if tpoAcao == 'CADASTRAR':
-
-            if idProjeto != -1:
-
-                registra_log(
-                    arquivo,
-                    nomeProjeto,
-                    nomeProjeto,
-                    f"ETAPA DE CONSULTA DE PROJETO ANTES DE CADASTRAR.",
-                    "S",
-                    f"{indice} - CADASTRO NÃO REALIZADO POIS O PROJETO JÁ ESTÁ CADASTRADO."
-                )
-
-            elif idProjeto == -1:
-
-                for index, rowProjeto in df.iterrows():
-
-                    cur.execute(
-                        """INSERT INTO dq.TB_PROJETO
-                                (
-                                NomCategoriaProjeto
-                                ,NomProjeto
-                                ,NumMaxIteracoes
-                                ,NomRespProjeto
-                                ,NomRespTecnico
-                                ,DscUltimaAcao
-                                )
-                                values(?,?,?,?,?,?)""",
-                                rowProjeto.NomCategoriaProjeto,
-                                rowProjeto.NomProjeto,
-                                rowProjeto.NumMaxIteracoes,
-                                rowProjeto.NomRespProjeto,
-                                rowProjeto.NomRespTecnico,
-                                rowProjeto.DscUltimaAcao
-                    )
-
-                    registra_log(
-                        arquivo,
-                        nomeProjeto,
-                        nomeProjeto,
-                        nomEtapa,
-                        "S",
-                        f"{indice} - PROJETO CADASTRADO COM SUCESSO."
-                    )
-
-            cnxn.commit()
-            cur.close()
-
-            idProjeto , indice = consulta_projeto(arquivo
-                                         , nomeProjeto
-                                         , "RETORNO DO CÓDIGO DO PROJETO CADASTRADO"
-                                         , indice)
-
-        elif tpoAcao == 'ALTERAR':
-
-            print('exclusao')
-
-        elif tpoAcao == 'EXCLUIR':
-
-            print('exclusao')
-
-        else:
-           
-            print('Erro de Preenchimento')
-
-    except pc.IntegrityError as e:
-
-        registra_log(
-            arquivo,
-            nomeProjeto,
-            nomeProjeto,
-            nomEtapa,
-            "E",
-            f"{indice} - ERROR: INTEGRITY CONSTRAINT VIOLATION OCCURRED:" + str(e)
-        )
-
-    except pc.Error as e:
-
-        registra_log(
-            arquivo,
-            nomeProjeto,
-            nomeProjeto,
-            nomEtapa,
-            "E",
-            f"{indice} - ERROR: FAILED TO INSERT DATA INTO THE DATABASE: " + str(e)
-        )
-
-    except Exception as e:
-        
-        registra_log(
-            arquivo,
-            nomeProjeto,
-            nomeProjeto,
-            nomEtapa,
-            "E",
-            f"{indice} - OCORREU UM ERRO DURANTE O PROCESSO DE IMPORTAÇÃO DE PROJETOS. ERROR: " + str(e)
-        )
-
-    return idProjeto, nomeProjeto, indice
-
 
 #####################################################################################################################
 # Número da Regra: 1
@@ -524,7 +721,6 @@ def importa_fonte_dado(arquivo, nomeProjeto, aba, nomEtapa, indice):
         )
 
     return idFonteDados, indice
-
 
 #####################################################################################################################
 # Número da Regra: 1
@@ -943,7 +1139,14 @@ def consulta_estrutura_fonte_dado(arquivo, abaEstruturaFonteDado, idProjeto, idF
 
             nomeProjeto = dfNomProjeto["NomProjeto"].to_string(index=False)
 
-            nomeFonteDados = dfFonteDados["NomFonteDados"].to_string(index=False)            
+
+            queryNomFonteDado = f"""SELECT DISTINCT C.[NomFonteDados]
+            FROM [dq].[TB_FONTE_DADO] C
+            WHERE C.[IdFonteDados] = {idFonteDado};"""
+
+            dfNomFonteDado = pd.read_sql(queryNomFonteDado, cnxn)
+
+            nomeFonteDados = dfNomFonteDado["NomFonteDados"].to_string(index=False)            
 
             if dfFonteDados.empty:
 
@@ -1654,7 +1857,11 @@ def valida_arquivo(arquivo, abaProjeto, abaFonteDado, abaEstruturaFonteDado):
 
         if contador == 0:
 
-            msg += f'* {contador} - Não foi encontrada nenhuma inconsistência.'
+            msg += f'* {contador} - Não foi encontrada nenhuma inconsistência.\n \nAtenciosamente, \n\nData Quality Control'
+
+        else:
+
+            msg += f'\n \nAtenciosamente, \n\nData Quality Control'
 
         print(msg)
 
@@ -1688,6 +1895,9 @@ def importa_planilha_dq(arquivo, abaProjeto, abaFonteDado, abaEstruturaFonteDado
 
         if contador == 0:
 
+            cnxn = conexao_db()
+            cur = cnxn.cursor()
+
             idProjeto, nomeProjeto, indice = importa_projeto(arquivo
                                                             , abaProjeto
                                                             , "ETAPA DE CADASTRO DE PROJETO"
@@ -1710,10 +1920,21 @@ def importa_planilha_dq(arquivo, abaProjeto, abaFonteDado, abaEstruturaFonteDado
                 indice
             )
 
+            queryNomFonteDado = f"""SELECT DISTINCT C.[NomFonteDados]
+            FROM [dq].[TB_FONTE_DADO] C
+            WHERE C.[IdFonteDados] = {idFonteDados};"""
+
+            dfNomFonteDado = pd.read_sql(queryNomFonteDado, cnxn)
+
+            nomeFonteDados = dfNomFonteDado["NomFonteDados"].to_string(index=False)   
+
+            cnxn.commit()
+            cur.close()             
+
             registra_log(
                 arquivo,
                 nomeProjeto,
-                nomeProjeto,
+                nomeFonteDados,
                 "FINALIZAÇÃO NO PROCESSO DE CADASTRO NO DATA QUALITY",
                 "E",
                 f"{indice} - PROCESSO EXECUTADO COM SUCESSO."
@@ -1745,3 +1966,4 @@ def importa_planilha_dq(arquivo, abaProjeto, abaFonteDado, abaEstruturaFonteDado
             "E",
             f"{indice} - OCORREU UM ERRO: " + str(e)
         )        
+

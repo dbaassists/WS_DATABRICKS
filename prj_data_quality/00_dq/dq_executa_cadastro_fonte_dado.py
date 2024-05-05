@@ -1,14 +1,10 @@
 import sys
 import os
-import pandas as pd
-import pyodbc as pc
-
-from envia_email import envia_email
-from registra_log import registra_log
-from dq_cadastro_fonte import importa_planilha_dq
+sys.path.insert(0,"/Workspace/util/")
 from conexao_db import conexao_db
-
-sys.path.insert(0, "/Workspace/util/")
+sys.path.insert(0,"../00_dq/")
+from dq_cadastro_fonte import importa_planilha_dq
+import pyodbc as pc
 
 diretorio = '/dbfs/mnt/dados/data_quality/'
 abaProjeto = 'Projeto'
@@ -21,4 +17,4 @@ for arquivo in os.listdir(diretorio):
 
     if  os.path.isfile(path):
 
-        importa_planilha_dq(path,abaProjeto,abaFonteDado,abaEstruturaFonteDado)    
+        importa_planilha_dq(path,abaProjeto,abaFonteDado,abaEstruturaFonteDado)
