@@ -1,6 +1,6 @@
 # Databricks notebook source
 import sys
-sys.path.insert(0,"../00_dq/")
+sys.path.insert(0,"/Workspace/Repos/ws_projeto_azure/WS_DATABRICKS_20240505/prj_data_quality/00_dq/dq_validacao_arquivo_dado")
 from dq_validacao_arquivo_dado import valida_dados_arquivo
 
 # COMMAND ----------
