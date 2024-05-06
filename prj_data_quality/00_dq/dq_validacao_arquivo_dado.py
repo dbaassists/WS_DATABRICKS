@@ -68,7 +68,10 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
                 sep=v_delimitador,
                 encoding=v_encoding,
                 header=0
-            )            
+            )  
+
+
+            print(dfArquivoImportado)          
 
         elif v_extensao == 'xslx':
 
