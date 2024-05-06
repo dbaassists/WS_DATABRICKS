@@ -251,7 +251,7 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
                     try:
 
-                        pd.to_datetime(elemento, format='%d/%m/%Y')
+                        pd.to_datetime(elemento, format='%Y-%m-%d')
 
                     except Exception as e:
 
