@@ -17,7 +17,14 @@ indice = 1
 
 erro = valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice)
 
-print("Erro: "+ str(erro))
+if erro != 0:
+
+    raise Exception("Erro na validação do arquivo via Data Quality.")
+
+else:
+
+    dbutils.notebook.exit('0')
+
 
 # COMMAND ----------
 
