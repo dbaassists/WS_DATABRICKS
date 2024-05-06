@@ -286,7 +286,7 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
         else:
 
-            msg += f'\nForam identificadas {contador} inconsistências no seu arquivo.'   
+            msg += f'\nForam identificadasssssssss {contador} inconsistências no seu arquivo.'   
 
             fromaddr = "dbaassists@gmail.com"
             toaddr = "dbaassists@gmail.com"
@@ -294,11 +294,11 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
             envia_email(fromaddr, toaddr, assunto, msg)                       
 
-        print(msg)
+        #print(msg)
 
-        print(contador)
+        print("contador: " + contador)
 
-        return contador
+        #return contador
                
     except Exception as e:
 
