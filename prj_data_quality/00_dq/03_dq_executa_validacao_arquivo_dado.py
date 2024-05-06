@@ -5,8 +5,8 @@ from dq_validacao_arquivo_dado import valida_dados_arquivo
 
 # COMMAND ----------
 
-dbutils.widgets.text("idprojeto", "")
-dbutils.widgets.text("idfontedado", "")
+dbutils.widgets.text("idprojeto", "1")
+dbutils.widgets.text("idfontedado", "1")
 
 # COMMAND ----------
 
@@ -18,7 +18,3 @@ indice = 1
 contador = valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice)
 
 print(contador)
-
-# COMMAND ----------
-
-

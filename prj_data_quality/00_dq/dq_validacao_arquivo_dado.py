@@ -70,9 +70,6 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
                 header=0
             )  
 
-
-            print(dfArquivoImportado)          
-
         elif v_extensao == 'xslx':
 
             print(v_extensao)            
@@ -264,6 +261,8 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
         # FIM VALIDAÇÃO ARQUIVO
         ##########################################################################################################
 
+        erro = contador
+
         if contador == 0:
 
             msg += f'* {contador} - Não foi encontrada nenhuma inconsistência.'
@@ -286,7 +285,7 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
         else:
 
-            msg += f'\nForam identificadasssssssss {contador} inconsistências no seu arquivo.'   
+            msg += f'\nForam identificadas {contador} inconsistências no seu arquivo.'   
 
             fromaddr = "dbaassists@gmail.com"
             toaddr = "dbaassists@gmail.com"
@@ -294,11 +293,9 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
             envia_email(fromaddr, toaddr, assunto, msg)                       
 
-        #print(msg)
+        print(msg)
 
-        print("contador: " + contador)
-
-        #return contador
+        print("contador: " + erro)
                
     except Exception as e:
 
@@ -309,6 +306,8 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
             nomEtapa,
             "E",
             f"{indice} - OCORREU UM ERRO: " + str(e)
-        )  
+        )
+
+    return erro
 
     
