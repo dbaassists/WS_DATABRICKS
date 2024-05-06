@@ -295,8 +295,6 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
         print(msg)
 
-        print("contador: " + erro)
-               
     except Exception as e:
 
         registra_log(
