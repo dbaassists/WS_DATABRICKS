@@ -1,4 +1,5 @@
 import sys
+import pandas as pd
 sys.path.insert(0,"/Workspace/util/")
 from envia_email import envia_email
 from registra_log import registra_log
