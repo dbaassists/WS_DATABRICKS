@@ -1,8 +1,8 @@
 import sys
-sys.path.insert(0,"../util/")
+sys.path.insert(0,"/Workspace/util/")
 from envia_email import envia_email
 from registra_log import registra_log
-
+from conexao_db import conexao_db
 
 def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
