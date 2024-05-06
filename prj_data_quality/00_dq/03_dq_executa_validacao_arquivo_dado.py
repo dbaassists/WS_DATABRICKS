@@ -1,6 +1,6 @@
 # Databricks notebook source
 import sys
-sys.path.insert(0,"/Workspace/Repos/ws_projeto_azure/WS_DATABRICKS_20240505/prj_data_quality/00_dq/dq_validacao_arquivo_dado")
+sys.path.insert(0,"../00_dq/")
 from dq_validacao_arquivo_dado import valida_dados_arquivo
 
 # COMMAND ----------
@@ -15,6 +15,10 @@ idfontedado = dbutils.widgets.get("idfontedado")
 nomEtapa = 'ETAPA DE VALIDAÇÃO DOS DADOS DO ARQUIVO.'
 indice = 1
 
-contador = valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice)
+erro = valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice)
 
-print(contador)
+print("Erro: "+ str(erro))
+
+# COMMAND ----------
+
+
