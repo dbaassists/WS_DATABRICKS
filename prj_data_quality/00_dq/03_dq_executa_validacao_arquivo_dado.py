@@ -15,7 +15,9 @@ idfontedado = dbutils.widgets.get("idfontedado")
 nomEtapa = 'ETAPA DE VALIDAÇÃO DOS DADOS DO ARQUIVO.'
 indice = 1
 
-valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice)
+contador = valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice)
+
+print(contador)
 
 # COMMAND ----------
 

@@ -295,6 +295,10 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
             envia_email(fromaddr, toaddr, assunto, msg)                       
 
         print(msg)
+
+        print(contador)
+
+        return contador
                
     except Exception as e:
 
@@ -306,3 +310,5 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
             "E",
             f"{indice} - OCORREU UM ERRO: " + str(e)
         )  
+
+    
