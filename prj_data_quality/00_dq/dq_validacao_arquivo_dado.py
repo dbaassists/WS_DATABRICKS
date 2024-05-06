@@ -265,7 +265,7 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
         if contador == 0:
 
-            msg += f'* {contador} - Não foi encontrada nenhuma inconsistência.'
+            msg += f'* {contador} - Não foi encontrada nenhuma inconsistência.\nAtenciosamente\nData Quality'
 
             fromaddr = "dbaassists@gmail.com"
             toaddr = "dbaassists@gmail.com"
@@ -275,7 +275,7 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
         elif contador == 1:
 
-            msg += f'\nFoi identificada {contador} inconsistência no seu arquivo.'    
+            msg += f'\nFoi identificada {contador} inconsistência no seu arquivo.\nAtenciosamente\nData Quality'    
 
             fromaddr = "dbaassists@gmail.com"
             toaddr = "dbaassists@gmail.com"
@@ -285,7 +285,7 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
         else:
 
-            msg += f'\nForam identificadas {contador} inconsistências no seu arquivo.'   
+            msg += f'\nForam identificadas {contador} inconsistências no seu arquivo.\nAtenciosamente\nData Quality'   
 
             fromaddr = "dbaassists@gmail.com"
             toaddr = "dbaassists@gmail.com"
