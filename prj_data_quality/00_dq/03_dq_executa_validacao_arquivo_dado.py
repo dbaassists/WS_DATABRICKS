@@ -5,8 +5,8 @@ from dq_validacao_arquivo_dado import valida_dados_arquivo
 
 # COMMAND ----------
 
-#dbutils.widgets.text("idprojeto", "")
-#dbutils.widgets.text("idfontedado", "")
+dbutils.widgets.text("idprojeto", "")
+dbutils.widgets.text("idfontedado", "")
 
 # COMMAND ----------
 
