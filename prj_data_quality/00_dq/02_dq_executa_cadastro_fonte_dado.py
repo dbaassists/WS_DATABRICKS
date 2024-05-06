@@ -25,7 +25,3 @@ for arquivo in os.listdir(diretorio):
     if  os.path.isfile(path):
 
         importa_planilha_dq(path,abaProjeto,abaFonteDado,abaEstruturaFonteDado)    
-
-# COMMAND ----------
-
-
