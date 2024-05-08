@@ -17,13 +17,19 @@ indice = 1
 
 erro = valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice)
 
-if erro != 0:
+try:
 
-    raise Exception("Erro na validação do arquivo via Data Quality.")
+    if erro != 0:
 
-else:
+        raise Exception("Erro na validação do arquivo via Data Quality.")
 
-    dbutils.notebook.exit('0')
+    else:
+
+        dbutils.notebook.exit('0')
+
+except Exception as e:
+
+    print(e)
 
 
 # COMMAND ----------
