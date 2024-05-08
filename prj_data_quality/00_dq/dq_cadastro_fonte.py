@@ -1942,7 +1942,7 @@ def importa_planilha_dq(arquivo, abaProjeto, abaFonteDado, abaEstruturaFonteDado
 
             fromaddr = "dbaassists@gmail.com"
             toaddr = "dbaassists@gmail.com"
-            assunto = "Data Quality - Inconsistências"
+            assunto = "Data Quality - Resumo Validação Arquivo (Sem Inconsistências)"
 
             envia_email(fromaddr, toaddr, assunto, msg)                
 
@@ -1952,7 +1952,7 @@ def importa_planilha_dq(arquivo, abaProjeto, abaFonteDado, abaEstruturaFonteDado
 
             fromaddr = "dbaassists@gmail.com"
             toaddr = "dbaassists@gmail.com"
-            assunto = "Data Quality - Inconsistências"
+            assunto = "Data Quality - Resumo Validação Arquivo (Com Inconsistências)"
 
             envia_email(fromaddr, toaddr, assunto, msg)    
 
