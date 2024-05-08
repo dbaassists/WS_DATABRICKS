@@ -19,281 +19,313 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
         cnxn = conexao_db()
         cur = cnxn.cursor()
 
-        queryContratoDados = f"""SELECT 
-                                FD.NomTabela
-                                , FD.NomFonteDados
-                                , P.NomProjeto
-                                , FD.NomAbaExcel
-                                , FD.DataLakeFolder
-                                , FD.DscExtensaoArquivo
-                                , FD.TpoDelimitadorArquivo
-                                , FD.NomEncodingArquivo
-                                , EFD.NumSeqColunaTabela
-                                , EFD.NomColuna
-                                , EFD.TpoDado
-                                , EFD.FlagColunaNula
-                                , EFD.FlagColunaObrigatoria
-                                , EFD.FlagColunaChave
-                                , EFD.TpoDadoArmazenado
-                                FROM dq.TB_ESTRUTURA_FONTE_DADO EFD
-                                INNER JOIN dq.TB_FONTE_DADO FD
-                                ON EFD.IdFonteDados = FD.IdFonteDados
-                                INNER JOIN dq.TB_PROJETO P
-                                ON FD.IdProjeto = P.IdProjeto
-                                WHERE EFD.IdProjeto = '{idprojeto}'
-                                AND FD.IdFonteDados = '{idfontedado}';"""
+        queryIdFonteDados = f"""
+        SELECT tFDado.IdProjeto , tFDado.idFonteDados 
+        FROM [dq].[TB_FONTE_DADO] tFDado
+        where tFDado.[IdFonteDados] = {idfontedado}
+        and tFDado.[IdProjeto] = {idprojeto}
+        GROUP BY tFDado.IdFonteDados,tFDado.idProjeto;
+        """
+        dfNomFonteDados = pd.read_sql(queryIdFonteDados, cnxn)
 
-        dfContratoDados = pd.read_sql(queryContratoDados, cnxn)
+        if dfNomFonteDados.empty:
+            v_IdProjeto = -1
+            v_idFonteDados = -1
 
-        v_diretorio = dfContratoDados["DataLakeFolder"].drop_duplicates(keep="last").head(1).values[0]
-        v_arquivo = dfContratoDados["NomFonteDados"].drop_duplicates(keep="last").head(1).values[0]
-        v_extensao = dfContratoDados["DscExtensaoArquivo"].drop_duplicates(keep="last").head(1).values[0]
-        v_nomeArquivo = v_diretorio + '\\' + v_arquivo + '.' + v_extensao 
-        v_aba = dfContratoDados["NomAbaExcel"].drop_duplicates(keep="last").head(1).values[0]
-        v_delimitador = dfContratoDados["TpoDelimitadorArquivo"].drop_duplicates(keep="last").head(1).values[0]
-        v_encoding = dfContratoDados["NomEncodingArquivo"].drop_duplicates(keep="last").head(1).values[0]
-        v_NomeProjeto = dfContratoDados["NomProjeto"].drop_duplicates(keep="last").head(1).values[0]
-        v_FonteDados = dfContratoDados["NomFonteDados"].drop_duplicates(keep="last").head(1).values[0]
+        else:
+            v_IdProjeto = dfNomFonteDados["IdProjeto"].to_string()
+            v_idFonteDados = dfNomFonteDados["idFonteDados"].to_string()
 
-        ##########################################################################################################
-        # VALIDAÇÃO PELO TIPO DE EXTENSÃO DO ARQUIVO
-        ##########################################################################################################      
-        
-        if (v_extensao == 'csv') | (v_extensao == 'txt'):
+        if (v_IdProjeto != -1 & v_idFonteDados != -1):            
 
-            print(v_extensao)
+            queryContratoDados = f"""SELECT 
+                                    FD.NomTabela
+                                    , FD.NomFonteDados
+                                    , P.NomProjeto
+                                    , FD.NomAbaExcel
+                                    , FD.DataLakeFolder
+                                    , FD.DscExtensaoArquivo
+                                    , FD.TpoDelimitadorArquivo
+                                    , FD.NomEncodingArquivo
+                                    , EFD.NumSeqColunaTabela
+                                    , EFD.NomColuna
+                                    , EFD.TpoDado
+                                    , EFD.FlagColunaNula
+                                    , EFD.FlagColunaObrigatoria
+                                    , EFD.FlagColunaChave
+                                    , EFD.TpoDadoArmazenado
+                                    FROM dq.TB_ESTRUTURA_FONTE_DADO EFD
+                                    INNER JOIN dq.TB_FONTE_DADO FD
+                                    ON EFD.IdFonteDados = FD.IdFonteDados
+                                    INNER JOIN dq.TB_PROJETO P
+                                    ON FD.IdProjeto = P.IdProjeto
+                                    WHERE EFD.IdProjeto = '{idprojeto}'
+                                    AND FD.IdFonteDados = '{idfontedado}';"""
 
-            dfArquivoImportado = pd.read_csv(
-                v_nomeArquivo,
-                sep=v_delimitador,
-                encoding=v_encoding,
-                header=0
-            )  
+            dfContratoDados = pd.read_sql(queryContratoDados, cnxn)
 
-        elif v_extensao == 'xslx':
+            v_diretorio = dfContratoDados["DataLakeFolder"].drop_duplicates(keep="last").head(1).values[0]
+            v_arquivo = dfContratoDados["NomFonteDados"].drop_duplicates(keep="last").head(1).values[0]
+            v_extensao = dfContratoDados["DscExtensaoArquivo"].drop_duplicates(keep="last").head(1).values[0]
+            v_nomeArquivo = v_diretorio + '\\' + v_arquivo + '.' + v_extensao 
+            v_aba = dfContratoDados["NomAbaExcel"].drop_duplicates(keep="last").head(1).values[0]
+            v_delimitador = dfContratoDados["TpoDelimitadorArquivo"].drop_duplicates(keep="last").head(1).values[0]
+            v_encoding = dfContratoDados["NomEncodingArquivo"].drop_duplicates(keep="last").head(1).values[0]
+            v_NomeProjeto = dfContratoDados["NomProjeto"].drop_duplicates(keep="last").head(1).values[0]
+            v_FonteDados = dfContratoDados["NomFonteDados"].drop_duplicates(keep="last").head(1).values[0]
 
-            print(v_extensao)            
+            ##########################################################################################################
+            # VALIDAÇÃO PELO TIPO DE EXTENSÃO DO ARQUIVO
+            ##########################################################################################################      
+            
+            if (v_extensao == 'csv') | (v_extensao == 'txt'):
 
-            dfArquivoImportado = pd.read_excel(
-                v_nomeArquivo,
-                sheet_name=v_aba,
-                sep=v_delimitador,
-                encoding=v_encoding,
-                header=0
-            )
+                print(v_extensao)
 
-        ##########################################################################################################
-        # VERIFICANDO SE AS COLUNAS DO ARQUIVO ESTÃO DE ACORDO COM O CONTRATO DE DADOS
-        ##########################################################################################################
+                dfArquivoImportado = pd.read_csv(
+                    v_nomeArquivo,
+                    sep=v_delimitador,
+                    encoding=v_encoding,
+                    header=0
+                )  
 
-        dfColunaContrato = pd.DataFrame(dfContratoDados['NomColuna'])
-        dfColunaArquivoImportado = pd.DataFrame(pd.Series(dfArquivoImportado.columns, name='NomColuna'))
-        serie_df1 = dfColunaContrato['NomColuna']
-        serie_df2 = dfColunaArquivoImportado['NomColuna']
+            elif v_extensao == 'xslx':
 
-        for i in range(len(serie_df1)):
+                print(v_extensao)            
 
-            valor_df1 = serie_df1.iloc[i]
+                dfArquivoImportado = pd.read_excel(
+                    v_nomeArquivo,
+                    sheet_name=v_aba,
+                    sep=v_delimitador,
+                    encoding=v_encoding,
+                    header=0
+                )
 
-            valor_df2 = serie_df2.iloc[i]
+            ##########################################################################################################
+            # VERIFICANDO SE AS COLUNAS DO ARQUIVO ESTÃO DE ACORDO COM O CONTRATO DE DADOS
+            ##########################################################################################################
 
-            if valor_df1 != valor_df2:
+            dfColunaContrato = pd.DataFrame(dfContratoDados['NomColuna'])
+            dfColunaArquivoImportado = pd.DataFrame(pd.Series(dfArquivoImportado.columns, name='NomColuna'))
+            serie_df1 = dfColunaContrato['NomColuna']
+            serie_df2 = dfColunaArquivoImportado['NomColuna']
 
-                contador += 1
+            for i in range(len(serie_df1)):
 
-                msg += f"* {contador} - Durante a validação do arquivo {v_arquivo + '.' + v_extensao}, foi identificado que o nome da coluna {valor_df2} é diferente do cadastro no Data Quality. O nome da coluna deverá ser {valor_df1}. Essa é a {i+1} coluna do arquivo {v_arquivo}. \n"  
+                valor_df1 = serie_df1.iloc[i]
 
-        ##########################################################################################################
-        # VERIFICANDO SE EXISTE ALGUMA COLUNA NO ARQUIVO QUES ESTÁ SENDO IMPORTADO NÃO ESTÁ NO CONTRATO DE DADOS
-        ##########################################################################################################
+                valor_df2 = serie_df2.iloc[i]
 
-        #listaColunasContrato = dfColunaContrato['NomColuna'].to_list()
+                if valor_df1 != valor_df2:
 
-        for index,row in dfColunaArquivoImportado.iterrows():
+                    contador += 1
 
-            coluna = row['NomColuna']
+                    msg += f"* {contador} - Durante a validação do arquivo {v_arquivo + '.' + v_extensao}, foi identificado que o nome da coluna {valor_df2} é diferente do cadastro no Data Quality. O nome da coluna deverá ser {valor_df1}. Essa é a {i+1} coluna do arquivo {v_arquivo}. \n"  
 
-            if coluna not in dfColunaContrato['NomColuna'].to_list():
+            ##########################################################################################################
+            # VERIFICANDO SE EXISTE ALGUMA COLUNA NO ARQUIVO QUES ESTÁ SENDO IMPORTADO NÃO ESTÁ NO CONTRATO DE DADOS
+            ##########################################################################################################
 
-                contador += 1
+            #listaColunasContrato = dfColunaContrato['NomColuna'].to_list()
 
-                msg += f"* {contador} - Durante a validação do arquivo {v_arquivo + '.' + v_extensao}, foi identificado que a coluna {coluna} não está cadastrada Data Quality para a fonte de dados {v_arquivo + '.' + v_extensao}. O nome da coluna não encontrada é {coluna} e ela está na {index+1} posição do arquivo {v_arquivo}. \n"  
+            for index,row in dfColunaArquivoImportado.iterrows():
 
-        ##########################################################################################################
-        # VERIFICANDO OS REGISTROS BASEADO NO DATATYPE CADASTRADO
-        ##########################################################################################################
+                coluna = row['NomColuna']
 
-        for col in dfArquivoImportado.columns:
-        
-            #colunasArquivoImportado = dfArquivoImportado[col].fillna(-99).to_list()
-            tipoDado = dfContratoDados[dfContratoDados['NomColuna'] == col]['TpoDado'].to_string(index=False)
+                if coluna not in dfColunaContrato['NomColuna'].to_list():
 
-            for seq, elemento in enumerate(dfArquivoImportado[col].fillna(-99).to_list()):
+                    contador += 1
 
-                if tipoDado == 'INT':
+                    msg += f"* {contador} - Durante a validação do arquivo {v_arquivo + '.' + v_extensao}, foi identificado que a coluna {coluna} não está cadastrada Data Quality para a fonte de dados {v_arquivo + '.' + v_extensao}. O nome da coluna não encontrada é {coluna} e ela está na {index+1} posição do arquivo {v_arquivo}. \n"  
 
-                    try:
+            ##########################################################################################################
+            # VERIFICANDO OS REGISTROS BASEADO NO DATATYPE CADASTRADO
+            ##########################################################################################################
 
-                        pd.to_numeric(elemento, downcast='integer', errors='raise')
+            for col in dfArquivoImportado.columns:
+            
+                #colunasArquivoImportado = dfArquivoImportado[col].fillna(-99).to_list()
+                tipoDado = dfContratoDados[dfContratoDados['NomColuna'] == col]['TpoDado'].to_string(index=False)
 
-                    except ValueError as e:
+                for seq, elemento in enumerate(dfArquivoImportado[col].fillna(-99).to_list()):
+
+                    if tipoDado == 'INT':
+
+                        try:
+
+                            pd.to_numeric(elemento, downcast='integer', errors='raise')
+
+                        except ValueError as e:
+
+                            contador += 1
+
+                            msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seq+1)} a coluna {col} possui um valor inválido. Valor encontrado: {str(elemento)}. \n" 
+
+                    elif tipoDado == 'FLOAT':
+
+                        try:
+
+                            pd.to_numeric(elemento, downcast='float', errors='raise')
+
+                        except ValueError as e:
+
+                            contador += 1
+
+                            msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seq+1)} a coluna {col} possui um valor inválido. Valor encontrado: {str(elemento)}. \n" 
+
+            ##########################################################################################################
+            # VERIFICANDO COLUNAS QUE NÃO ACEITAM VALORES NULOS
+            ##########################################################################################################
+
+            for col in dfContratoDados[dfContratoDados['FlagColunaNula'] == 1]['NomColuna']:
+            
+                #colunasNula = dfArquivoImportado[col].to_list()
+
+                for seqColunaNula, tpColunaNula in enumerate(dfArquivoImportado[col].to_list()):
+
+                    if pd.isna(tpColunaNula):
+                        
+                        contador += 1
+
+                        msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seqColunaNula+1)} a coluna {col} tem o seu preenchimento obrigatório e no arquivo {v_arquivo + '.' + v_extensao} ela está apresentando valores ausentes.\n" 
+
+            ##########################################################################################################
+            # VERIFICANDO COLUNAS QUE POSSUEM SEU PREENCHIMENTO OBRIGATÓRIO
+            ##########################################################################################################
+
+            for col in dfContratoDados[dfContratoDados['FlagColunaObrigatoria'] == 1]['NomColuna']:
+
+                #colunasObrigatoria = dfArquivoImportado[col].to_list()
+
+                for seqColunaObrigatoria, tpColunaObrigatoria in enumerate(dfArquivoImportado[col].to_list()):
+
+                    if pd.isna(tpColunaObrigatoria):
+                        
+                        contador += 1
+
+                        msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seqColunaObrigatoria+1)} a coluna {col} tem o seu preenchimento obrigatório e no arquivo {v_arquivo + '.' + v_extensao} ela está apresentando valores ausentes.\n" 
+
+            ##########################################################################################################
+            # VERIFICANDO COLUNAS CHAVE DA TABELA
+            ##########################################################################################################
+
+            for col in dfContratoDados[dfContratoDados['FlagColunaChave'] == 1]['NomColuna']:
+            
+                repetido = dfArquivoImportado.groupby(col, as_index=False).agg(Ocorrencia= (col, 'count'))
+
+                for coluna in repetido[repetido['Ocorrencia'] > 1][col]:
+
+                    for seqColunaPK, tpColunaPK in enumerate(dfArquivoImportado[dfArquivoImportado[col] == coluna][col].to_list()):
 
                         contador += 1
 
-                        msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seq+1)} a coluna {col} possui um valor inválido. Valor encontrado: {str(elemento)}. \n" 
+                        msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seqColunaPK+1)} a coluna {col} não permite valores repetidos. Foram encontrados os valores {str(tpColunaPK)} repetidos na coluna {col}.\n" 
 
-                elif tipoDado == 'FLOAT':
 
-                    try:
+            ##########################################################################################################
+            # VALIDANDO COLUNA TIPO E-MAIL
+            ##########################################################################################################
 
-                        pd.to_numeric(elemento, downcast='float', errors='raise')
+            for col in dfContratoDados[dfContratoDados['TpoDadoArmazenado'] == 'EMAIL']['NomColuna']:
 
-                    except ValueError as e:
+                #colunasEmail = dfArquivoImportado[col].fillna(-99).to_list()
+
+                for seq, elemento in enumerate(dfArquivoImportado[col].fillna(-99).to_list()):
+
+                    if ('@' not in elemento):
 
                         contador += 1
 
-                        msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seq+1)} a coluna {col} possui um valor inválido. Valor encontrado: {str(elemento)}. \n" 
-
-        ##########################################################################################################
-        # VERIFICANDO COLUNAS QUE NÃO ACEITAM VALORES NULOS
-        ##########################################################################################################
-
-        for col in dfContratoDados[dfContratoDados['FlagColunaNula'] == 1]['NomColuna']:
-        
-            #colunasNula = dfArquivoImportado[col].to_list()
-
-            for seqColunaNula, tpColunaNula in enumerate(dfArquivoImportado[col].to_list()):
-
-                if pd.isna(tpColunaNula):
-                    
-                    contador += 1
-
-                    msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seqColunaNula+1)} a coluna {col} tem o seu preenchimento obrigatório e no arquivo {v_arquivo + '.' + v_extensao} ela está apresentando valores ausentes.\n" 
-
-        ##########################################################################################################
-        # VERIFICANDO COLUNAS QUE POSSUEM SEU PREENCHIMENTO OBRIGATÓRIO
-        ##########################################################################################################
-
-        for col in dfContratoDados[dfContratoDados['FlagColunaObrigatoria'] == 1]['NomColuna']:
-
-            #colunasObrigatoria = dfArquivoImportado[col].to_list()
-
-            for seqColunaObrigatoria, tpColunaObrigatoria in enumerate(dfArquivoImportado[col].to_list()):
-
-                if pd.isna(tpColunaObrigatoria):
-                    
-                    contador += 1
-
-                    msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seqColunaObrigatoria+1)} a coluna {col} tem o seu preenchimento obrigatório e no arquivo {v_arquivo + '.' + v_extensao} ela está apresentando valores ausentes.\n" 
-
-        ##########################################################################################################
-        # VERIFICANDO COLUNAS CHAVE DA TABELA
-        ##########################################################################################################
-
-        for col in dfContratoDados[dfContratoDados['FlagColunaChave'] == 1]['NomColuna']:
-        
-            repetido = dfArquivoImportado.groupby(col, as_index=False).agg(Ocorrencia= (col, 'count'))
-
-            for coluna in repetido[repetido['Ocorrencia'] > 1][col]:
-
-                for seqColunaPK, tpColunaPK in enumerate(dfArquivoImportado[dfArquivoImportado[col] == coluna][col].to_list()):
-
-                    contador += 1
-
-                    msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seqColunaPK+1)} a coluna {col} não permite valores repetidos. Foram encontrados os valores {str(tpColunaPK)} repetidos na coluna {col}.\n" 
+                        msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seq+1)} foi identificado que existe um registro fora do padrão permitido. Os registros dessa coluna devem ser e-mail. Segue o valor encontrado {elemento}. \n"
 
 
-        ##########################################################################################################
-        # VALIDANDO COLUNA TIPO E-MAIL
-        ##########################################################################################################
+            ##########################################################################################################
+            # VALIDANDO COLUNA TIPO DATA
+            ##########################################################################################################
 
-        for col in dfContratoDados[dfContratoDados['TpoDadoArmazenado'] == 'EMAIL']['NomColuna']:
+            for col in dfContratoDados[dfContratoDados['TpoDadoArmazenado'] == 'DATA']['NomColuna']:
+                
+                for seq, elemento in enumerate(dfArquivoImportado[col].fillna(-99).to_list()):                
 
-            #colunasEmail = dfArquivoImportado[col].fillna(-99).to_list()
+                    try:
 
-            for seq, elemento in enumerate(dfArquivoImportado[col].fillna(-99).to_list()):
+                        pd.to_datetime(elemento, format='%Y-%m-%d')
 
-                if ('@' not in elemento):
+                    except Exception as e:
 
-                    contador += 1
+                        contador += 1
 
-                    msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seq+1)} foi identificado que existe um registro fora do padrão permitido. Os registros dessa coluna devem ser e-mail. Segue o valor encontrado {elemento}. \n"
+                        msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seq+1)} foi identificado que existe um registro fora do padrão permitido. Os registros dessa coluna devem ser data. Segue o valor encontrado {elemento}. \n"
 
+            ##########################################################################################################
+            # VALIDANDO COLUNA TIPO DATETIME
+            ##########################################################################################################
 
-        ##########################################################################################################
-        # VALIDANDO COLUNA TIPO DATA
-        ##########################################################################################################
+            for col in dfContratoDados[dfContratoDados['TpoDadoArmazenado'] == 'DATETIME']['NomColuna']:
+                
+                for seq, elemento in enumerate(dfArquivoImportado[col].fillna(-99).to_list()):                
 
-        for col in dfContratoDados[dfContratoDados['TpoDadoArmazenado'] == 'DATA']['NomColuna']:
-            
-            for seq, elemento in enumerate(dfArquivoImportado[col].fillna(-99).to_list()):                
+                    try:
 
-                try:
+                        pd.to_datetime(elemento, format='%Y-%m-%d %H:%M:%S')                    
 
-                    pd.to_datetime(elemento, format='%Y-%m-%d')
+                    except Exception as e:
 
-                except Exception as e:
+                        contador += 1
 
-                    contador += 1
-
-                    msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seq+1)} foi identificado que existe um registro fora do padrão permitido. Os registros dessa coluna devem ser data. Segue o valor encontrado {elemento}. \n"
-
-        ##########################################################################################################
-        # VALIDANDO COLUNA TIPO DATETIME
-        ##########################################################################################################
-
-        for col in dfContratoDados[dfContratoDados['TpoDadoArmazenado'] == 'DATETIME']['NomColuna']:
-            
-            for seq, elemento in enumerate(dfArquivoImportado[col].fillna(-99).to_list()):                
-
-                try:
-
-                    pd.to_datetime(elemento, format='%Y-%m-%d %H:%M:%S')                    
-
-                except Exception as e:
-
-                    contador += 1
-
-                    msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seq+1)} foi identificado que existe um registro fora do padrão permitido. Os registros dessa coluna devem ser no formato data como YYYY-MM-DD HH:MM:SS. Segue o valor encontrado {elemento}. \n"
+                        msg += f"* {contador} - Durante a importação do arquivo {v_arquivo + '.' + v_extensao}, na linha {str(seq+1)} foi identificado que existe um registro fora do padrão permitido. Os registros dessa coluna devem ser no formato data como YYYY-MM-DD HH:MM:SS. Segue o valor encontrado {elemento}. \n"
 
 
-        ##########################################################################################################
-        # FIM VALIDAÇÃO ARQUIVO
-        ##########################################################################################################
+            ##########################################################################################################
+            # FIM VALIDAÇÃO ARQUIVO
+            ##########################################################################################################
 
-        erro = contador
+            erro = contador
 
-        if contador == 0:
+            if contador == 0:
 
-            msg += f'* {contador} - Não foi encontrada nenhuma inconsistência.\n\nAtenciosamente\n\nData Quality'
+                msg += f'* {contador} - Não foi encontrada nenhuma inconsistência.\n \nAtenciosamente, \n\nData Quality Control'
 
-            fromaddr = "dbaassists@gmail.com"
-            toaddr = "dbaassists@gmail.com"
-            assunto = "Data Quality - Inconsistências"
+                fromaddr = "dbaassists@gmail.com"
+                toaddr = "dbaassists@gmail.com"
+                assunto = "Data Quality - Resumo Validação Arquivo de Dados (Sem Inconsistência)"
 
-            envia_email(fromaddr, toaddr, assunto, msg)              
+                envia_email(fromaddr, toaddr, assunto, msg)              
 
-        elif contador == 1:
+            elif contador == 1:
 
-            msg += f'\nFoi identificada {contador} inconsistência no seu arquivo.\n\nAtenciosamente\n\nData Quality'    
+                msg += f'\nFoi identificada {contador} inconsistência no seu arquivo.\n \nAtenciosamente, \n\nData Quality Control'    
 
-            fromaddr = "dbaassists@gmail.com"
-            toaddr = "dbaassists@gmail.com"
-            assunto = "Data Quality - Inconsistências"
+                fromaddr = "dbaassists@gmail.com"
+                toaddr = "dbaassists@gmail.com"
+                assunto = "Data Quality - Resumo Validação Arquivo de Dados (Com Inconsistência)"
 
-            envia_email(fromaddr, toaddr, assunto, msg)                      
+                envia_email(fromaddr, toaddr, assunto, msg)                      
+
+            else:
+
+                msg += f'\nForam identificadas {contador} inconsistências no seu arquivo.\n \nAtenciosamente, \n\nData Quality Control'   
+
+                fromaddr = "dbaassists@gmail.com"
+                toaddr = "dbaassists@gmail.com"
+                assunto = "Data Quality - Resumo Validação Arquivo de Dados (Com Inconsistências)"
+
+                envia_email(fromaddr, toaddr, assunto, msg)                        
+
+            print(msg)
+
 
         else:
 
-            msg += f'\nForam identificadas {contador} inconsistências no seu arquivo.\n\nAtenciosamente\n\nData Quality'   
+            msg += f'Não existe um projeto com o Código {idprojeto} e com uma fonte de dado de código {idfontedado}.\n \nAtenciosamente, \n\nData Quality Control'   
 
             fromaddr = "dbaassists@gmail.com"
             toaddr = "dbaassists@gmail.com"
-            assunto = "Data Quality - Inconsistências"
+            assunto = "Data Quality - Resumo Validação Arquivo de Dados (Com Inconsistências)"
 
             envia_email(fromaddr, toaddr, assunto, msg)                       
 
-        print(msg)
+            print(msg)        
 
     except Exception as e:
 
