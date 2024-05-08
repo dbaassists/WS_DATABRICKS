@@ -5,6 +5,7 @@ from conexao_db import conexao_db
 sys.path.insert(0,"/00_dq/")
 from dq_cadastro_fonte import importa_planilha_dq
 import pyodbc as pc
+import os
 
 # COMMAND ----------
 
