@@ -29,14 +29,14 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
         dfNomFonteDados = pd.read_sql(queryIdFonteDados, cnxn)
 
         if dfNomFonteDados.empty:
-            v_IdProjeto = -1
-            v_idFonteDados = -1
+            v_IdProjeto = 'NI'
+            v_idFonteDados = 'NI'
 
         else:
             v_IdProjeto = dfNomFonteDados["IdProjeto"].to_string()
             v_idFonteDados = dfNomFonteDados["idFonteDados"].to_string()
 
-        if (v_IdProjeto != -1 & v_idFonteDados != -1):            
+        if v_IdProjeto != 'NI':
 
             queryContratoDados = f"""SELECT 
                                     FD.NomTabela

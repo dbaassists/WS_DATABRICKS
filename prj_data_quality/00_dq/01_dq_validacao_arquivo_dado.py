@@ -38,7 +38,7 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
             v_IdProjeto = dfNomFonteDados["IdProjeto"].to_string()
             v_idFonteDados = dfNomFonteDados["idFonteDados"].to_string()
 
-        if (v_IdProjeto != -1 & v_idFonteDados != -1):
+        if (v_IdProjeto != '-1' & v_idFonteDados != '-1'):
 
             queryContratoDados = f"""SELECT 
                                     FD.NomTabela
