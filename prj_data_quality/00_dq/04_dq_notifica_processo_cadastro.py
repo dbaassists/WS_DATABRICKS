@@ -12,7 +12,7 @@ dbutils.widgets.text("msg", "")
 
 # COMMAND ----------
 
-fromaddr = dbutils.widgets.get("idprojeto")
+fromaddr = dbutils.widgets.get("fromaddr")
 toaddr = dbutils.widgets.get("toaddr")
 assunto = dbutils.widgets.get("assunto")
 msg = dbutils.widgets.get("msg") 
