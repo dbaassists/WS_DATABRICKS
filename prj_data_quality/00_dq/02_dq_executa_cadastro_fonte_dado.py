@@ -1,9 +1,4 @@
 # Databricks notebook source
-# MAGIC %run "../00_dq/00_dq_cadastro_fonte"
-# MAGIC
-
-# COMMAND ----------
-
 import sys
 sys.path.insert(0,"/Workspace/util/")
 from conexao_db import conexao_db
