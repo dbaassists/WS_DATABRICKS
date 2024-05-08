@@ -288,7 +288,7 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
                 fromaddr = "dbaassists@gmail.com"
                 toaddr = "dbaassists@gmail.com"
-                assunto = "Data Quality - Inconsistências"
+                assunto = "Data Quality - Resumo Validação Arquivo de Dados (Sem Inconsistência)"
 
                 envia_email(fromaddr, toaddr, assunto, msg)              
 
@@ -298,7 +298,7 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
                 fromaddr = "dbaassists@gmail.com"
                 toaddr = "dbaassists@gmail.com"
-                assunto = "Data Quality - Inconsistências"
+                assunto = "Data Quality - Resumo Validação Arquivo de Dados (Com Inconsistência)"
 
                 envia_email(fromaddr, toaddr, assunto, msg)                      
 
@@ -308,7 +308,7 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
                 fromaddr = "dbaassists@gmail.com"
                 toaddr = "dbaassists@gmail.com"
-                assunto = "Data Quality - Inconsistências"
+                assunto = "Data Quality - Resumo Validação Arquivo de Dados (Com Inconsistências)"
 
                 envia_email(fromaddr, toaddr, assunto, msg)                       
 
@@ -320,7 +320,7 @@ def valida_dados_arquivo(idprojeto, idfontedado, nomEtapa, indice):
 
             fromaddr = "dbaassists@gmail.com"
             toaddr = "dbaassists@gmail.com"
-            assunto = "Data Quality - Inconsistências"
+            assunto = "Data Quality - Resumo Validação Arquivo de Dados (Com Inconsistências)"
 
             envia_email(fromaddr, toaddr, assunto, msg)                       
 
