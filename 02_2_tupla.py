@@ -36,7 +36,6 @@ type(diasemana)
 
 # %%
 
-
 # Podemos remover um elemento de uma tupla da seguinte forma
 
 diasemana = tuple(['segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sabado','domingo'])

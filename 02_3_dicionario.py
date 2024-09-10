@@ -91,3 +91,101 @@ len(carro)
 carro['ASD-1234'] =  ['Duster', 2021,'Gasolina']
 
 carro
+
+# %%
+
+import json
+import pyodbc
+import pandas as pd
+
+parametros = {"Sql_Server" : ["localhost\\DBAASSISTS","ERP_VENDAS","python","python","SQL Server"]}
+
+print(parametros)
+
+for dicionario in parametros.keys():
+
+    server = parametros[dicionario][0]
+    database = parametros[dicionario][1] 
+    username = parametros[dicionario][2] 
+    password = parametros[dicionario][3] 
+    driver = parametros[dicionario][4]
+
+    print(server)
+    print(database) 
+    print(username)
+    print(password) 
+    print(driver)    
+
+    # Conectar ao SQL Server
+    conn = pyodbc.connect(
+        'DRIVER={ODBC Driver 17 for SQL Server};'
+        fr'SERVER={server};'
+        fr'DATABASE={database};'
+        fr'UID={username};'
+        fr'PWD={password}'
+    )
+
+    # Usar pandas para ler a tabela diretamente em um DataFrame
+    df = pd.read_sql("""
+                    SELECT s.name + '.' + t.name nomeTabela 
+                    FROM sys.tables t
+                    INNER JOIN sys.schemas s
+                    ON t.schema_id = s.schema_id
+    """, conn)
+
+    # Exibir as primeiras linhas do DataFrame
+
+    print(df.head(50))
+
+
+# %%
+
+import json
+import pyodbc
+import pandas as pd
+
+arq_json = fr'C:\Temp\Python_YT\Git\MBA\01_Estrutura_Dados\02_Aula\parametro_db.json'
+
+df =  pd.read_json(arq_json)
+
+df
+
+for param in df.keys():
+
+    server = df[param][0]
+    database = df[param][1] 
+    username = df[param][2] 
+    password = df[param][3] 
+    driver = df[param][4]
+
+    print(server)
+    print(database) 
+    print(username)
+    print(password) 
+    print(driver)
+
+    # Conectar ao SQL Server
+    conn = pyodbc.connect(
+        'DRIVER={ODBC Driver 17 for SQL Server};'
+        fr'SERVER={server};'
+        fr'DATABASE={database};'
+        fr'UID={username};'
+        fr'PWD={password}'
+    )
+
+    # Usar pandas para ler a tabela diretamente em um DataFrame
+    df = pd.read_sql("""
+                    SELECT s.name + '.' + t.name nomeTabela 
+                    FROM sys.tables t
+                    INNER JOIN sys.schemas s
+                    ON t.schema_id = s.schema_id
+    """, conn)
+
+    # Exibir as primeiras linhas do DataFrame
+
+    print(df.head())
+
+# %%
+
+
+conn.close()
